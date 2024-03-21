@@ -33,7 +33,7 @@ ExtDef : Specifier ExtDecList SEMI { $$ = makeNode("ExtDef", @$.first_line, 3, $
         errorCnt++;
         if (isErrorLine[@$.first_line] == 0)
         {
-            printf("Error type: B at Line %d: Wrong extern Definition\n", @$.first_line);
+            printf("Error type: B at Line %d: Wrong extern Definition.\n", @$.first_line);
             isErrorLine[@$.first_line] = 1;
         }
     }
@@ -80,7 +80,7 @@ Stmt : Exp SEMI { $$ = makeNode("Stmt", @$.first_line, 2, $1, $2); }
             errorCnt++;
             if (isErrorLine[i] == 0)
             {
-                printf("Error type: B at Line %d: Wrong Statements\n", i);
+                printf("Error type: B at Line %d: Wrong Statements.\n", i);
                 isErrorLine[i] = 1;
             }
         }
@@ -96,7 +96,7 @@ Def : Specifier DecList SEMI { $$ = makeNode("Def", @$.first_line, 3, $1, $2, $3
             errorCnt++;
             if (isErrorLine[i] == 0)
             {
-                printf("Error type: B at Line %d: Wrong Statements\n", i);
+                printf("Error type: B at Line %d: Wrong Statements.\n", i);
                 isErrorLine[i] = 1;
             }
         }
