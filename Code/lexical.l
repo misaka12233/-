@@ -109,7 +109,7 @@ while { makeTokenNode("WHILE", TOKEN_OTHER, data); return WHILE; }
     errorCnt++;
     if (isErrorLine[yylineno] == 0)
     {
-        printf("Error type: A at Line %d: Wrong Int Number \'%s\'\n.", yylineno, yytext);
+        printf("Error type: A at Line %d: Wrong Int Number \'%s\'.\n", yylineno, yytext);
         isErrorLine[yylineno] = 1;
     }
     return INT;
@@ -118,7 +118,7 @@ while { makeTokenNode("WHILE", TOKEN_OTHER, data); return WHILE; }
     errorCnt++;
     if (isErrorLine[yylineno] == 0)
     {
-        printf("Error type: A at Line %d: Wrong Float Number \'%s\'\n.", yylineno, yytext);
+        printf("Error type: A at Line %d: Wrong Float Number \'%s\'.\n", yylineno, yytext);
         isErrorLine[yylineno] = 1;
     }
     return FLOAT;
@@ -127,7 +127,7 @@ while { makeTokenNode("WHILE", TOKEN_OTHER, data); return WHILE; }
     errorCnt++;
     if (isErrorLine[yylineno] == 0)
     {
-        printf("Error type: A at Line %d: Myterious characters \'%s\'\n.", yylineno, yytext);
+        printf("Error type: A at Line %d: Myterious characters \'%s\'.\n", yylineno, yytext);
         isErrorLine[yylineno] = 1;
     }
 }
