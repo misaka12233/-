@@ -136,6 +136,7 @@ void makeTokenNode(char* name, unitType type, Data data)
 {
     struct node* now = (struct node*)malloc(sizeof(struct node));
     now->line = yylineno;
+    now->ruleId = -1;
     now->type = type;
     now->data = data;
     now->name = name;

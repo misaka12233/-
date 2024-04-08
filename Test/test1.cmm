@@ -1,5 +1,19 @@
+struct temp1
+{
+    int i;
+    float j;
+};
+struct temp2
+{
+    int x = 0;
+};
+int func()
+{
+    int i = 10;
+    return i;
+}
 int main()
 {
-	int i = 1;
-	int j = 2;
+    struct temp1 t1;
+    struct temp2 t2;
 }

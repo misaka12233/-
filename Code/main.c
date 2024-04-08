@@ -1,6 +1,5 @@
-#include <stdio.h>
 #include "syntax.tab.h"
-#include "head.h"
+#include "semantic.h"
 
 extern int errorCnt;
 extern int isErrorLine[maxLine];
@@ -58,7 +57,6 @@ int main(int argc, char** argv)
     yyrestart(f);
     //yydebug = 1;
     yyparse();
-    if (errorCnt == 0)
-        printSyntaxTree(root, 0);
+    semanticAnalysis();
     return 0;
 }
