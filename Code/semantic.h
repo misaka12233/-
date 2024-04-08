@@ -47,5 +47,14 @@ struct HashTable_
     } u;
 };
 
+Type newType();
+int getHead(char *name);
+void freeStack(int final);
+int compareType(Type t1, Type t2);
+Type getField(char *name, FieldList now);
+int comparePara(HashTable x, HashTable y);
+HashTable searchTable(char *name, int kind);
+HashTable newFunc(Type type, char *name, int line);
+HashTable newSymbol(int kind, Type type, char *name, int line);
+
 void semanticAnalysis();
-void visitTree(struct node* now, struct node* fa);
