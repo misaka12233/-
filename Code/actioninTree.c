@@ -30,7 +30,6 @@ void actionBeforeChild(struct node* now, struct node* fa)
         case 1:
         case 19:
         case 20:
-        case 24:
             top++;
             break;
         case 8:
@@ -52,6 +51,18 @@ void actionBeforeChild(struct node* now, struct node* fa)
              type->u.array.size = now->child[2]->data.intVal;
              now->data.ptVal = type;
              break;
+        case 24:
+            top++;
+            now->data.ptVal = fa->data.ptVal;
+            break;
+        case 26:
+        case 28:
+        case 29:
+        case 30:
+        case 31:
+        case 32:
+            now->data.ptVal = fa->data.ptVal;
+            break;
         case 51:
             symbol = searchTable(now->child[0]->data.strVal, FUNC);
             if (symbol == 0)
@@ -145,8 +156,6 @@ void actionAfterChild(struct node* now, struct node* fa)
                 if (newSymbol(TYP, now->data.ptVal, now->child[1]->data.strVal, now->line) == 0)
                     printf("Error type 16 at Line %d: duplicate name.\n", now->line);
             }
-            if (printError == 2)
-                printf("Error type 15 at Line %d: duplicate definition.\n", now->line);
             printError = 0;
             break;
         case 14:
@@ -160,8 +169,10 @@ void actionAfterChild(struct node* now, struct node* fa)
             now->data.ptVal = newSymbol(VAR, fa->data.ptVal, now->child[0]->data.strVal, now->line);
             if (now->data.ptVal == 0)
             {
-                if (printError == 1) printError = 2;
-                else printf("Error type 3 at Line %d: duplicate name.\n", now->line);
+                if (printError == 1) 
+                    printf("Error type 15 at Line %d: redefinied.\n", now->line);
+                else 
+                    printf("Error type 3 at Line %d: redefinied.\n", now->line);
             }
             break;
         case 18:
@@ -172,36 +183,11 @@ void actionAfterChild(struct node* now, struct node* fa)
             now->data.ptVal = newFunc(fa->data.ptVal, now->child[0]->data.strVal, now->line);
             break;
         case 24:
-            now->data.ptVal = now->child[2]->data.ptVal;
             freeStack(0);
             break;
-        case 26:
-            if (!compareType(now->child[0]->data.ptVal, now->child[1]->data.ptVal))
-                now->data.ptVal = now->child[0]->data.ptVal;
-            else if (now->child[0]->data.ptVal != 0)
-                now->data.ptVal = now->child[0]->data.ptVal;
-            else
-                now->data.ptVal = now->child[1]->data.ptVal;
-            break;
-        case 28:
-            now->data.ptVal = now->child[0]->data.ptVal;
-            break;
         case 29:
-            now->data.ptVal = now->child[1]->data.ptVal;
-            break;
-        case 30:
-            now->data.ptVal = now->child[4]->data.ptVal;
-            break;
-        case 31:
-            if (!compareType(now->child[4]->data.ptVal, now->child[6]->data.ptVal))
-                now->data.ptVal = now->child[4]->data.ptVal;
-            else if (now->child[4]->data.ptVal != 0)
-                now->data.ptVal = now->child[4]->data.ptVal;
-            else
-                now->data.ptVal = now->child[6]->data.ptVal;
-            break;
-        case 32:
-            now->data.ptVal = now->child[4]->data.ptVal;
+            if (!compareType(now->data.ptVal, now->child[1]->data.ptVal))
+                printf("Error type 8 at Line %d: Type mismatched for return.\n", now->line);
             break;
         case 39:
             symbol = now->child[0]->data.ptVal;
