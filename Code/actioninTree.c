@@ -1,12 +1,14 @@
-#include "semantic.h"
+#include "head.h"
 #define MAX_TABLE 0x3fff
 
 extern struct node* root;
+extern int errorCnt;
 extern int top;
 extern int printError;
 extern HashTable stack[MAX_TABLE];
 extern HashTable symbolHead[MAX_TABLE];
-extern struct Type_ intType, floatType, unknownType;
+extern struct Type_ intType, floatType;
+extern struct Operand_ emptyOp, zeroOp, oneOp, fourOp;
 
 void init()
 {
@@ -15,10 +17,17 @@ void init()
     memset(symbolHead, 0, sizeof(symbolHead));
     intType.kind = BASIC;
     intType.u.basic = 0;
+    intType.bytes = 4;
     floatType.kind = BASIC;
     floatType.u.basic = 1;
-    unknownType.kind = UNKNOWN;
-    unknownType.u.basic = 0;
+    floatType.bytes = 4;
+    emptyOp.kind = OP_EMPTY;
+    zeroOp.kind = PRE_NULL;
+    strcpy(zeroOp.name, "#0");
+    oneOp.kind = PRE_NULL;
+    strcpy(oneOp.name, "#1");
+    fourOp.kind = PRE_NULL;
+    strcpy(fourOp.name, "#4");
 }
 
 void actionBeforeChild(struct node* now, struct node* fa)
@@ -49,6 +58,7 @@ void actionBeforeChild(struct node* now, struct node* fa)
              type->kind = ARRAY;
              type->u.array.elem = fa->data.ptVal;
              type->u.array.size = now->child[2]->data.intVal;
+             type->bytes = type->u.array.elem->bytes * type->u.array.size;
              now->data.ptVal = type;
              break;
         case 24:
@@ -69,9 +79,9 @@ void actionBeforeChild(struct node* now, struct node* fa)
             {
                 symbol = searchTable(now->child[0]->data.strVal, VAR);
                 if (symbol != 0)
-                    printf("Error type 11 at Line %d: varible cannot call as function.\n", now->line);
+                    printf("Error type 11 at Line %d: varible cannot call as function.\n", now->line), errorCnt++;
                 else
-                    printf("Error type 2 at Line %d: undefined function.\n", now->line);
+                    printf("Error type 2 at Line %d: undefined function.\n", now->line), errorCnt++;
             }
             else
             {
@@ -86,15 +96,15 @@ void actionBeforeChild(struct node* now, struct node* fa)
             {
                 symbol = searchTable(now->child[0]->data.strVal, VAR);
                 if (symbol != 0)
-                    printf("Error type 11 at Line %d: varible cannot call as function.\n", now->line);
+                    printf("Error type 11 at Line %d: varible cannot call as function.\n", now->line), errorCnt++;
                 else
-                    printf("Error type 2 at Line %d: undefined function.\n", now->line);
+                    printf("Error type 2 at Line %d: undefined function.\n", now->line), errorCnt++;
             }
             else 
             {
                 now->data.ptVal = symbol->type;
                 if (symbol->u.para.size != 0)
-                    printf("Error type 9 at Line %d: error number of arguements for function.\n", now->line);
+                    printf("Error type 9 at Line %d: error number of arguements for function.\n", now->line), errorCnt++;
             }
             now->type = EXP_R_VALUE;
             break;
@@ -115,18 +125,18 @@ void actionAfterChild(struct node* now, struct node* fa)
         case 6:
             symbol = now->child[1]->data.ptVal;
             if (symbol == 0 || symbol->u.para.def == 1)
-                printf("Error type 4 at Line %d: redefined function.\n", now->line);
+                printf("Error type 4 at Line %d: redefined function.\n", now->line), errorCnt++;
             if (symbol != 0)
             {
                 symbol->u.para.def = 1;
                 if (!compareType(symbol->type, now->child[2]->data.ptVal))
-                    printf("Error type 8 at Line %d: error return type.\n", now->line);
+                    printf("Error type 8 at Line %d: error return type.\n", now->line), errorCnt++;
             }
             freeStack(0);
             break;
         case 7:
             if (now->child[1]->data.ptVal == 0)
-                printf("Error type 19 at Line %d: conflict function define.\n", now->line);
+                printf("Error type 19 at Line %d: conflict function define.\n", now->line), errorCnt++;
             freeStack(0);
             break;
         case 10:
@@ -142,10 +152,10 @@ void actionAfterChild(struct node* now, struct node* fa)
         case 12:
             symbol = searchTable(now->child[1]->data.strVal, VAR);
             if (symbol != 0 && symbol->stackId == top) 
-                printf("Error type 16 at Line %d: duplicate name.\n", now->line);
+                printf("Error type 16 at Line %d: duplicate name.\n", now->line), errorCnt++;
             symbol = searchTable(now->child[1]->data.strVal, TYP);
             if (symbol == 0) 
-                printf("Error type 17 at Line %d: undefined struct.\n", now->line);
+                printf("Error type 17 at Line %d: undefined struct.\n", now->line), errorCnt++;
             else
                 fa->data.ptVal = now->data.ptVal = symbol->type;
             break;
@@ -154,7 +164,7 @@ void actionAfterChild(struct node* now, struct node* fa)
             if (strlen(now->child[1]->data.strVal) != 0)
             {
                 if (newSymbol(TYP, now->data.ptVal, now->child[1]->data.strVal, now->line) == 0)
-                    printf("Error type 16 at Line %d: duplicate name.\n", now->line);
+                    printf("Error type 16 at Line %d: duplicate name.\n", now->line), errorCnt++;
             }
             printError = 0;
             break;
@@ -170,9 +180,9 @@ void actionAfterChild(struct node* now, struct node* fa)
             if (now->data.ptVal == 0)
             {
                 if (printError == 1) 
-                    printf("Error type 15 at Line %d: redefinied.\n", now->line);
+                    printf("Error type 15 at Line %d: redefinied.\n", now->line), errorCnt++;
                 else 
-                    printf("Error type 3 at Line %d: redefinied.\n", now->line);
+                    printf("Error type 3 at Line %d: redefinied.\n", now->line), errorCnt++;
             }
             break;
         case 18:
@@ -187,7 +197,7 @@ void actionAfterChild(struct node* now, struct node* fa)
             break;
         case 29:
             if (!compareType(now->data.ptVal, now->child[1]->data.ptVal))
-                printf("Error type 8 at Line %d: Type mismatched for return.\n", now->line);
+                printf("Error type 8 at Line %d: Type mismatched for return.\n", now->line), errorCnt++;
             break;
         case 39:
             symbol = now->child[0]->data.ptVal;
@@ -195,9 +205,9 @@ void actionAfterChild(struct node* now, struct node* fa)
             break;
         case 40:
             if (!compareType(now->child[0]->data.ptVal, now->child[2]->data.ptVal))
-                printf("Error type 5 at Line %d: conflict type in assginment.\n", now->line);
+                printf("Error type 5 at Line %d: conflict type in assginment.\n", now->line), errorCnt++;
             if (now->child[0]->type == EXP_R_VALUE)
-                printf("Error type 6 at Line %d: expression cannot used in right.\n", now->line);
+                printf("Error type 6 at Line %d: expression cannot used in right.\n", now->line), errorCnt++;
             now->data.ptVal = now->child[0]->data.ptVal;
             now->type = EXP_R_VALUE;
             break;
@@ -205,14 +215,14 @@ void actionAfterChild(struct node* now, struct node* fa)
         case 42:
             if (!compareType(now->child[0]->data.ptVal, &intType) 
             || !compareType(now->child[2]->data.ptVal, &intType))
-                printf("Error type 7 at Line %d: illegal operator.\n", now->line);
+                printf("Error type 7 at Line %d: illegal operator.\n", now->line), errorCnt++;
             now->data.ptVal = &intType;
             now->type = EXP_R_VALUE;
             break;
         case 43:
             if (!compareType(now->child[0]->data.ptVal, now->child[2]->data.ptVal) || 
             (!compareType(now->child[0]->data.ptVal, &intType) && !compareType(now->child[0]->data.ptVal, &floatType)))
-                printf("Error type 7 at Line %d: illegal operator.\n", now->line);
+                printf("Error type 7 at Line %d: illegal operator.\n", now->line), errorCnt++;
             now->data.ptVal = &intType;
             now->type = EXP_R_VALUE;
             break;
@@ -222,7 +232,7 @@ void actionAfterChild(struct node* now, struct node* fa)
         case 47:
             if (!compareType(now->child[0]->data.ptVal, now->child[2]->data.ptVal) || 
             (!compareType(now->child[0]->data.ptVal, &intType) && !compareType(now->child[0]->data.ptVal, &floatType)))
-                printf("Error type 7 at Line %d: illegal operator.\n", now->line);
+                printf("Error type 7 at Line %d: illegal operator.\n", now->line), errorCnt++;
             now->data.ptVal = now->child[0]->data.ptVal;
             now->type = EXP_R_VALUE;
             break;
@@ -232,27 +242,27 @@ void actionAfterChild(struct node* now, struct node* fa)
             break;
         case 49:
             if (!compareType(now->child[1]->data.ptVal, &intType) && !compareType(now->child[1]->data.ptVal, &floatType))
-                printf("Error type 7 at Line %d: illegal operator.\n", now->line);
+                printf("Error type 7 at Line %d: illegal operator.\n", now->line), errorCnt++;
             now->data.ptVal = now->child[1]->data.ptVal;
             now->type = EXP_R_VALUE;
             break;
         case 50:
             if (!compareType(now->child[1]->data.ptVal, &intType))
-                printf("Error type 7 at Line %d: illegal operator.\n", now->line);
+                printf("Error type 7 at Line %d: illegal operator.\n", now->line), errorCnt++;
             now->data.ptVal = now->child[1]->data.ptVal;
             now->type = EXP_R_VALUE;
             break;
         case 51:
             symbol = searchTable(now->child[0]->data.strVal, FUNC);
             if (symbol != 0 && now->child[2]->data.intVal != symbol->u.para.size)
-                printf("Error type 9 at Line %d: error number of arguements for function.\n", now->line);
+                printf("Error type 9 at Line %d: error number of arguements for function.\n", now->line), errorCnt++;
             break;
         case 53:
             type = now->child[0]->data.ptVal;
             if (type == 0 || type->kind != ARRAY)
-                printf("Error type 10 at Line %d: illegal array visit.\n", now->line);
+                printf("Error type 10 at Line %d: illegal array visit.\n", now->line), errorCnt++;
             if (!compareType(now->child[2]->data.ptVal, &intType))
-                printf("Error type 12 at Line %d: illegal array visit.\n", now->line);
+                printf("Error type 12 at Line %d: illegal array visit.\n", now->line), errorCnt++;
             if (type != 0)
                 now->data.ptVal = type->u.array.elem;
             now->type = EXP_LR_VALUE;
@@ -260,19 +270,19 @@ void actionAfterChild(struct node* now, struct node* fa)
         case 54:
             type = now->child[0]->data.ptVal;
             if (type == 0 || type->kind != STRUCTURE)
-                printf("Error type 13 at Line %d: illegal struct visit.\n", now->line);
+                printf("Error type 13 at Line %d: illegal struct visit.\n", now->line), errorCnt++;
             else 
             {
                 now->data.ptVal = getField(now->child[2]->data.strVal, type->u.structure);
                 if (now->data.ptVal == 0)
-                    printf("Error type 14 at Line %d: illegal struct visit.\n", now->line);
+                    printf("Error type 14 at Line %d: illegal struct visit.\n", now->line), errorCnt++;
             }
             now->type = EXP_LR_VALUE;
             break;
         case 55:
             symbol = searchTable(now->child[0]->data.strVal, VAR);
             if (symbol == 0)
-                printf("Error type 1 at Line %d: undefined varible.\n", now->line);
+                printf("Error type 1 at Line %d: undefined varible.\n", now->line), errorCnt++;
             else
             {
                 now->data.ptVal = symbol->type;
@@ -291,27 +301,36 @@ void actionAfterChild(struct node* now, struct node* fa)
             symbol = now->data.ptVal;
             now->data.intVal = now->child[2]->data.intVal + 1;
             if (!compareType(now->child[0]->data.ptVal, symbol->u.para.type[now->data.intVal - 1]))
-                printf("Error type 9 at Line %d: error type arguement for function.\n", now->line);
+                printf("Error type 9 at Line %d: error type arguement for function.\n", now->line), errorCnt++;
             break;
         case 59:
             symbol = now->data.ptVal;
             now->data.intVal = 1;
             if (symbol != 0 && !compareType(now->child[0]->data.ptVal, symbol->u.para.type[now->data.intVal - 1]))
-                printf("Error type 9 at Line %d: error type arguement for function.\n", now->line);
+                printf("Error type 9 at Line %d: error type arguement for function.\n", now->line), errorCnt++;
             break;
     }
 }
 
+void checkError(struct node* now, struct node* fa)
+{
+    actionBeforeChild(now, fa);
+    for (int i = 0; i < now->childCnt; i++)
+        checkError(now->child[i], now);
+    actionAfterChild(now, fa);
+}
 void visitTree(struct node* now, struct node* fa)
 {
     actionBeforeChild(now, fa);
     for (int i = 0; i < now->childCnt; i++)
         visitTree(now->child[i], now);
+    translateIR(now);
     actionAfterChild(now, fa);
 }
-
 void semanticAnalysis()
 {
     init();
-    visitTree(root, 0);
+    checkError(root, 0);
+    if (errorCnt <= 0)
+        visitTree(root, 0);
 }

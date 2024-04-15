@@ -1,4 +1,4 @@
-#include "semantic.h"
+#include "head.h"
 
 extern struct node* root;
 
@@ -41,10 +41,12 @@ Type newType()
     HashTable now = stack[top];
     FieldList lst = 0;
     type->kind = STRUCTURE;
+    type->bytes = 0;
     type->u.structure = 0;
     while (now != 0)
     {
         type->u.structure = (FieldList)malloc(sizeof(struct FieldList_));
+        type->bytes += now->type->bytes;
         type->u.structure->name = now->name;
         type->u.structure->type = now->type;
         type->u.structure->nxt = lst;
@@ -135,6 +137,7 @@ HashTable newSymbol(int kind, Type type, char *name, int line)
     symbol->u.init.type = 0;
     int head = getHead(name); symbol->nxtTable = symbolHead[head]; symbolHead[head] = symbol;
     symbol->nxtStack = stack[top]; stack[top] = symbol;
+    makeSymbolOp(symbol);
     return symbol;
 }
 
@@ -168,6 +171,7 @@ HashTable newFunc(Type type, char *name, int line)
     {
         int head = getHead(name); symbol->nxtTable = symbolHead[head]; symbolHead[head] = symbol;
         symbol->nxtStack = stack[top - 1]; stack[top - 1] = symbol;
+        makeSymbolOp(symbol);
         return symbol;
     }
 }

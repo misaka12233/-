@@ -1,50 +1,104 @@
 #include "syntax.tab.h"
-#include "semantic.h"
+#include "head.h"
 
 extern int errorCnt;
 extern int isErrorLine[maxLine];
 extern struct node* root;
 
-void printSpace(int x) { while (x--) printf(" "); }
-void printSyntaxTree(struct node* now, int dep)
+void getName(Operand op, char* name)
 {
-    if (now->type == SYNTAX_UNIT)
+    switch (op->kind)
     {
-        if (now->childCnt != 0)
+        case PRE_NULL:
+            sprintf(name, "%s", op->name);
+            break;
+        case PRE_AND:
+            sprintf(name, "&%s", op->name);
+            break;
+        case PRE_STAR:
+            sprintf(name, "*%s", op->name);
+            break;
+    }
+}
+void printCode(Code code)
+{
+    if (code == 0) 
+        return;
+    char name1[50], name2[50], name3[50];
+    if (code->kind == IR_CALL && code->result->kind == OP_EMPTY)
+        code->result = newTempOp();
+    getName(code->arg1, name1);
+    getName(code->arg2, name2);
+    getName(code->result, name3);
+    if (code->result->kind != OP_EMPTY)
+    {
+        switch (code->kind)
         {
-            printSpace(dep * 2);
-            printf("%s (%d)\n", now->name, now->line);
+        case IR_LABEL:
+            printf("LABEL %s :\n", name3);
+            break;
+        case IR_FUNC:
+            printf("FUNCTION %s:\n", name3);
+            break;
+        case IR_ASSIGN:
+            printf("%s := %s\n", name3, name1);
+            break;
+        case IR_PLUS:
+            printf("%s := %s + %s\n", name3, name1, name2);
+            break;
+        case IR_MINUS:
+            printf("%s := %s - %s\n", name3, name1, name2);
+            break;
+        case IR_MUL:
+            printf("%s := %s * %s\n", name3, name1, name2);
+            break;
+        case IR_DIV:
+            printf("%s := %s / %s\n", name3, name1, name2);
+            break;
+        case IR_GOTO:
+            printf("GOTO %s\n", name3);
+            break;
+        case IR_IF_G:
+            printf("IF %s > %s GOTO %s\n", name1, name2, name3);
+            break;
+        case IR_IF_L:
+            printf("IF %s < %s GOTO %s\n", name1, name2, name3);
+            break;
+        case IR_IF_GEQ:
+            printf("IF %s >= %s GOTO %s\n", name1, name2, name3);
+            break;
+        case IR_IF_LEQ:
+            printf("IF %s <= %s GOTO %s\n", name1, name2, name3);
+            break;
+        case IR_IF_EQ:
+            printf("IF %s == %s GOTO %s\n", name1, name2, name3);
+            break;
+        case IR_IF_NEQ:
+            printf("IF %s != %s GOTO %s\n", name1, name2, name3);
+            break;
+        case IR_RET:
+            printf("RETURN %s\n", name3);
+            break;
+        case IR_DEC:
+            printf("DEC %s %s\n", name3, name1);
+            break;
+        case IR_ARG:
+            printf("ARG %s\n", name3);
+            break;
+        case IR_CALL:
+            printf("%s := CALL %s\n", name3, name1);
+            break;
+        case IR_PARAM:
+            printf("PARAM %s\n", name3);
+            break;
+        case IR_READ:
+            break;
+        case IR_WRITE:
+            break;
         }
     }
-    else if (now->type == TOKEN_ID)
-    {
-        printSpace(dep * 2);
-        printf("%s: %s\n", now->name, now->data.strVal);
-    }
-    else if (now->type == TOKEN_TYPE)
-    {
-        printSpace(dep * 2);
-        printf("%s: %s\n", now->name, now->data.strVal);
-    }
-    else if (now->type == TOKEN_INT)
-    {
-        printSpace(dep * 2);
-        printf("%s: %d\n", now->name, now->data.intVal);
-    }
-    else if (now->type == TOKEN_FLOAT)
-    {
-        printSpace(dep * 2);
-        printf("%s: %f\n", now->name, now->data.floatVal);
-    }
-    else if (now->type == TOKEN_OTHER)
-    {
-        printSpace(dep * 2);
-        printf("%s\n", now->name);
-    }
-    for (int i = 0; i < now->childCnt; i++)
-        printSyntaxTree(now->child[i], dep + 1);
+    printCode(code->nxt);
 }
-
 int main(int argc, char** argv)
 {
     if (argc <= 1) return 1;
@@ -57,6 +111,8 @@ int main(int argc, char** argv)
     yyrestart(f);
     //yydebug = 1;
     yyparse();
-    semanticAnalysis();
+    if (errorCnt == 0)
+        semanticAnalysis();
+    printCode(root->code);
     return 0;
 }

@@ -1,12 +1,14 @@
-#include "head.h"
 #include <stdlib.h>
 
 typedef struct Type_* Type;
 typedef struct FieldList_* FieldList;
+typedef struct HashTable_* HashTable;
+typedef struct Operand_* Operand;
 
 struct Type_ 
 { 
     enum { BASIC, ARRAY, STRUCTURE, UNKNOWN } kind; 
+    int bytes;
     union 
     { 
         // 基本类型 
@@ -27,8 +29,6 @@ struct FieldList_
     FieldList nxt; // 下一个域 
 }; 
 
-typedef struct HashTable_* HashTable;
-
 struct HashTable_
 {
     enum { VAR, TYP, FUNC } kind; 
@@ -36,6 +36,7 @@ struct HashTable_
     char* name;
     int line;
     int stackId;
+    Operand op;
     HashTable nxtTable, nxtStack;
     union
     {

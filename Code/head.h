@@ -1,3 +1,4 @@
+#include "translator.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -25,6 +26,7 @@ struct node{
     int ruleId;
     unitType type;
     Data data;
+    Code code;
     char* name;
     int childCnt;
     struct node* child[8];

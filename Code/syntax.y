@@ -144,6 +144,7 @@ struct node* makeNode(char* name, int ruleId, int line, int childCnt, ...)
     now->name = name;
     now->childCnt = childCnt;
     memset(now->data.strVal, 0, sizeof(now->data.strVal));
+    now->code = 0;
     va_list ap;
     va_start(ap, childCnt);
     for (int i = 0; i < childCnt; i++)
