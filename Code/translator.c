@@ -6,13 +6,17 @@ struct Operand_ emptyOp, zeroOp, oneOp, fourOp;
 
 void makeSymbolOp(HashTable symbol)
 {
+    static int varId = 0;
     Operand op = malloc(sizeof(struct Operand_));
     symbol->op = op;
     if (symbol->kind == VAR && symbol->type->kind != BASIC)
         op->kind = PRE_AND;
     else
         op->kind = PRE_NULL;
-    sprintf(op->name, "%s_%d%d", symbol->name, symbol->kind, symbol->stackId);
+    if (symbol->kind == FUNC)
+        sprintf(op->name, "%s", symbol->name);
+    else
+        sprintf(op->name, "var%d", varId++);
 }
 
 Code codeConnect(int codeCnt, ...)
@@ -147,7 +151,7 @@ Code newExpAssignCode(Type type, Code exp1, int id1, Code exp2, int id2)
             fillEmpty(exp2, t1);
             exp2 = codeConnect(3, exp2, 
                                 newCode(IR_ASSIGN, t1, &emptyOp, exp1->arg1), 
-                                newCode(IR_ASSIGN, t1, &emptyOp, &emptyOp));
+                                newCode(IR_ASSIGN, exp1->arg1, &emptyOp, &emptyOp));
             free(exp1);
             return exp2;
         }
@@ -161,7 +165,7 @@ Code newExpAssignCode(Type type, Code exp1, int id1, Code exp2, int id2)
             t3 = newCopyOp(t1, PRE_STAR);
             return codeConnect(4, exp1, exp2, 
                                 newCode(IR_ASSIGN, t2, &emptyOp, t3), 
-                                newCode(IR_ASSIGN, t2, &emptyOp, &emptyOp));
+                                newCode(IR_ASSIGN, t3, &emptyOp, &emptyOp));
         }
     }
     else
@@ -178,7 +182,7 @@ Code newExpAssignCode(Type type, Code exp1, int id1, Code exp2, int id2)
                                 newCode(IR_PLUS, t1, &fourOp, t1), 
                                 newCode(IR_PLUS, t2, &fourOp, t2), 
                                 newCode(IR_ASSIGN, t3, &emptyOp, t4));
-        return codeConnect(2, code, newCode(IR_MINUS, t2, newIntOp(1, type->bytes - 4), &emptyOp));
+        return codeConnect(2, code, newCode(IR_MINUS, t1, newIntOp(1, type->bytes - 4), &emptyOp));
     }
 }
 Code newAndExpCode(Code exp1, int id1, Code exp2, int id2)
@@ -263,9 +267,20 @@ Code newNotExpCode(Code exp, int id)
                         newCode(IR_ASSIGN, &zeroOp, &emptyOp, &emptyOp),
                         newCode(IR_LABEL, &emptyOp, &emptyOp, label));
 }
-Code newCallCode(HashTable func)
+Code newCallCode(HashTable func, Code argCode)
 {
-    return newCode(IR_CALL, func->op, &emptyOp, &emptyOp);
+    if (strcmp(func->name, "write") == 0)
+    {
+        Code lstCode = argCode;
+        while (lstCode->nxt != 0)
+            lstCode = lstCode->nxt;
+        lstCode->kind = IR_WRITE;
+        return codeConnect(2, argCode, newCode(IR_ASSIGN, &zeroOp, &emptyOp, &emptyOp));
+    }
+    else if (strcmp(func->name, "read") == 0)
+        return newCode(IR_READ, &emptyOp, &emptyOp, &emptyOp);
+    else
+        return codeConnect(2, argCode, newCode(IR_CALL, func->op, &emptyOp, &emptyOp));
 }
 Code newArrayExpCode(Type type, Code exp1, Code exp2, int id2)
 {
@@ -375,7 +390,7 @@ void translateIR(struct node* now)
         case 34:
             now->code = codeConnect(2, now->child[0]->code, now->child[1]->code);
             break;
-        case 4:
+        //case 4:
         case 35:
         case 48:
             now->code = now->child[1]->code;
@@ -392,13 +407,13 @@ void translateIR(struct node* now)
                 now->child[1]->code = 0;
             }
             break;
-        case 8:
+        //case 8:
         case 38:
             now->code = newVarDecCode(now->child[0]->data.ptVal);
             break;
-        case 9:
-            now->code = codeConnect(2, newVarDecCode(now->child[0]->data.ptVal), now->child[2]->code);
-            break;
+        //case 9:
+        //    now->code = codeConnect(2, newVarDecCode(now->child[0]->data.ptVal), now->child[2]->code);
+        //    break;
         case 19:
             now->code = now->child[2]->code;
             break;
@@ -460,10 +475,10 @@ void translateIR(struct node* now)
             now->code = newNotExpCode(now->child[1]->code, now->child[1]->ruleId);
             break;
         case 51:
-            now->code = codeConnect(2, now->child[2]->code, newCallCode(searchTable(now->child[0]->data.strVal, FUNC)));
+            now->code = newCallCode(searchTable(now->child[0]->data.strVal, FUNC), now->child[2]->code);
             break;
         case 52:
-            now->code = newCallCode(searchTable(now->child[0]->data.strVal, FUNC));
+            now->code = newCallCode(searchTable(now->child[0]->data.strVal, FUNC), 0);
             break;
         case 53:
             now->code = newArrayExpCode(now->child[0]->data.ptVal, now->child[0]->code, now->child[2]->code, now->child[2]->ruleId);

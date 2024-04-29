@@ -42,5 +42,6 @@ struct Code_{
 };
 
 void translateIR(struct node* now);
+void optimizeIR(Code code);
 void makeSymbolOp(HashTable symbol);
 Operand newTempOp();

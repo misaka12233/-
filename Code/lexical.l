@@ -19,7 +19,7 @@
 %}
 int8 0[0-7]+
 int10 0|[1-9][0-9]*
-int16 0x[0-9a-fA-F]+
+int16 0x[0-9a-fA-F]+|0X[0-9a-fA-F]+
 digit0 [0-9]*
 digit1 [0-9]+
 float {digit1}\.{digit1}

@@ -20,89 +20,87 @@ void getName(Operand op, char* name)
             break;
     }
 }
-void printCode(Code code)
+void printCode(Code code, FILE* output)
 {
     if (code == 0) 
         return;
     char name1[50], name2[50], name3[50];
-    if (code->kind == IR_CALL && code->result->kind == OP_EMPTY)
-        code->result = newTempOp();
     getName(code->arg1, name1);
     getName(code->arg2, name2);
     getName(code->result, name3);
-    if (code->result->kind != OP_EMPTY)
+    switch (code->kind)
     {
-        switch (code->kind)
-        {
         case IR_LABEL:
-            printf("LABEL %s :\n", name3);
+            fprintf(output, "LABEL %s :\n", name3);
             break;
         case IR_FUNC:
-            printf("FUNCTION %s:\n", name3);
+            fprintf(output, "FUNCTION %s :\n", name3);
             break;
         case IR_ASSIGN:
-            printf("%s := %s\n", name3, name1);
+            fprintf(output, "%s := %s\n", name3, name1);
             break;
         case IR_PLUS:
-            printf("%s := %s + %s\n", name3, name1, name2);
+            fprintf(output, "%s := %s + %s\n", name3, name1, name2);
             break;
         case IR_MINUS:
-            printf("%s := %s - %s\n", name3, name1, name2);
+            fprintf(output, "%s := %s - %s\n", name3, name1, name2);
             break;
         case IR_MUL:
-            printf("%s := %s * %s\n", name3, name1, name2);
+            fprintf(output, "%s := %s * %s\n", name3, name1, name2);
             break;
         case IR_DIV:
-            printf("%s := %s / %s\n", name3, name1, name2);
+            fprintf(output, "%s := %s / %s\n", name3, name1, name2);
             break;
         case IR_GOTO:
-            printf("GOTO %s\n", name3);
+            fprintf(output, "GOTO %s\n", name3);
             break;
         case IR_IF_G:
-            printf("IF %s > %s GOTO %s\n", name1, name2, name3);
+            fprintf(output, "IF %s > %s GOTO %s\n", name1, name2, name3);
             break;
         case IR_IF_L:
-            printf("IF %s < %s GOTO %s\n", name1, name2, name3);
+            fprintf(output, "IF %s < %s GOTO %s\n", name1, name2, name3);
             break;
         case IR_IF_GEQ:
-            printf("IF %s >= %s GOTO %s\n", name1, name2, name3);
+            fprintf(output, "IF %s >= %s GOTO %s\n", name1, name2, name3);
             break;
         case IR_IF_LEQ:
-            printf("IF %s <= %s GOTO %s\n", name1, name2, name3);
+            fprintf(output, "IF %s <= %s GOTO %s\n", name1, name2, name3);
             break;
         case IR_IF_EQ:
-            printf("IF %s == %s GOTO %s\n", name1, name2, name3);
+            fprintf(output, "IF %s == %s GOTO %s\n", name1, name2, name3);
             break;
         case IR_IF_NEQ:
-            printf("IF %s != %s GOTO %s\n", name1, name2, name3);
+            fprintf(output, "IF %s != %s GOTO %s\n", name1, name2, name3);
             break;
         case IR_RET:
-            printf("RETURN %s\n", name3);
+            fprintf(output, "RETURN %s\n", name3);
             break;
         case IR_DEC:
-            printf("DEC %s %s\n", name3, name1);
+            fprintf(output, "DEC %s %s\n", name3, name1);
             break;
         case IR_ARG:
-            printf("ARG %s\n", name3);
+            fprintf(output, "ARG %s\n", name3);
             break;
         case IR_CALL:
-            printf("%s := CALL %s\n", name3, name1);
+            fprintf(output, "%s := CALL %s\n", name3, name1);
             break;
         case IR_PARAM:
-            printf("PARAM %s\n", name3);
+            fprintf(output, "PARAM %s\n", name3);
             break;
         case IR_READ:
+            fprintf(output, "READ %s\n", name3);
             break;
         case IR_WRITE:
+            fprintf(output, "WRITE %s\n", name3);
             break;
-        }
     }
-    printCode(code->nxt);
+    printCode(code->nxt, output);
 }
 int main(int argc, char** argv)
 {
     if (argc <= 1) return 1;
     FILE* f = fopen(argv[1], "r");
+    FILE* output = fopen("result.ir", "w");
     if (!f)
     {
         perror(argv[1]);
@@ -112,7 +110,13 @@ int main(int argc, char** argv)
     //yydebug = 1;
     yyparse();
     if (errorCnt == 0)
+    {
         semanticAnalysis();
-    printCode(root->code);
+        if (errorCnt == 0)
+        {
+            optimizeIR(root->code);
+            printCode(root->code, output);
+        }
+    }
     return 0;
 }

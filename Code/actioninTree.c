@@ -12,15 +12,17 @@ extern struct Operand_ emptyOp, zeroOp, oneOp, fourOp;
 
 void init()
 {
-    top = -1;
+    top = 0;
     memset(stack, 0, sizeof(stack));
     memset(symbolHead, 0, sizeof(symbolHead));
+
     intType.kind = BASIC;
     intType.u.basic = 0;
     intType.bytes = 4;
     floatType.kind = BASIC;
     floatType.u.basic = 1;
     floatType.bytes = 4;
+
     emptyOp.kind = OP_EMPTY;
     zeroOp.kind = PRE_NULL;
     strcpy(zeroOp.name, "#0");
@@ -28,6 +30,29 @@ void init()
     strcpy(oneOp.name, "#1");
     fourOp.kind = PRE_NULL;
     strcpy(fourOp.name, "#4");
+
+    HashTable symbol = (HashTable)malloc(sizeof(struct HashTable_));
+    symbol->kind = FUNC;
+    symbol->type = &intType;
+    symbol->name = "read";
+    symbol->line = 0;
+    symbol->u.para.size = 0;
+    symbol->u.para.def = 1;
+    symbol->stackId = top;
+    int head = getHead("read"); symbol->nxtTable = symbolHead[head]; symbolHead[head] = symbol;
+    symbol->nxtStack = stack[top]; stack[top] = symbol;
+
+    symbol = (HashTable)malloc(sizeof(struct HashTable_));
+    symbol->kind = FUNC;
+    symbol->type = &intType;
+    symbol->name = "write";
+    symbol->line = 0;
+    symbol->u.para.size = 1;
+    symbol->u.para.def = 1;
+    symbol->u.para.type[0] = &intType;
+    symbol->stackId = top;
+    head = getHead("write"); symbol->nxtTable = symbolHead[head]; symbolHead[head] = symbol;
+    symbol->nxtStack = stack[top]; stack[top] = symbol;
 }
 
 void actionBeforeChild(struct node* now, struct node* fa)
@@ -331,6 +356,6 @@ void semanticAnalysis()
 {
     init();
     checkError(root, 0);
-    if (errorCnt <= 0)
+    if (errorCnt == 0)
         visitTree(root, 0);
 }
